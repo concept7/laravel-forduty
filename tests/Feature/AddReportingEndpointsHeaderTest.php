@@ -87,6 +87,15 @@ it('normalizes a leading slash on the token', function () {
         ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.com/abc123"');
 });
 
+it('appends the token to a base url that already has a path', function () {
+    config()->set('laravel-forduty.token', 'abc123');
+    config()->set('laravel-forduty.base_url', 'https://in.forduty.com/ingest');
+
+    $this->get('/forduty-test')
+        ->assertOk()
+        ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.com/ingest/abc123"');
+});
+
 it('overwrites an existing reporting endpoints header', function () {
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', 'https://in.forduty.com');

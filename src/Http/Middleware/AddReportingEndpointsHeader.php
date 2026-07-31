@@ -6,6 +6,7 @@ namespace Concept7\LaravelForduty\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Uri;
 use Symfony\Component\HttpFoundation\Response;
 
 class AddReportingEndpointsHeader
@@ -24,7 +25,11 @@ class AddReportingEndpointsHeader
             return $response;
         }
 
-        $endpoint = rtrim($baseUrl, '/').'/'.ltrim($token, '/');
+        $uri = Uri::of($baseUrl);
+
+        $endpoint = $uri
+            ->withPath(rtrim($uri->path(), '/').'/'.ltrim($token, '/'))
+            ->value();
 
         $response->headers->set('Reporting-Endpoints', sprintf('default="%s"', $endpoint));
 
