@@ -15,4 +15,9 @@ abstract class TestCase extends Orchestra
             LaravelFordutyServiceProvider::class,
         ];
     }
+
+    protected function defineEnvironment($app): void
+    {
+        $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+    }
 }

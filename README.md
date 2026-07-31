@@ -10,7 +10,7 @@
     <a href="https://packagist.org/packages/concept7/laravel-forduty"><img src="https://img.shields.io/packagist/dt/concept7/laravel-forduty.svg?style=flat-square" alt="Total Downloads"></a>
 </p>
 
-Test
+for.duty collects your sites' browser reports — CSP violations, network errors, deprecations — groups them into distinct problems, and alerts your team only when something new appears.
 
 ## Installation
 
@@ -36,7 +36,39 @@ php artisan vendor:publish --tag="laravel-forduty-config"
 
 ## Usage
 
-<!-- Add a basic usage example here. -->
+Add your for.duty reporting URL and site token to your `.env` file:
+
+```dotenv
+FORDUTY_BASE_URL=https://in.forduty.com
+FORDUTY_TOKEN=your-site-token
+```
+
+That's it. The package automatically appends its middleware to the `web` middleware group, and every response will include a `Reporting-Endpoints` header pointing browsers at your for.duty endpoint:
+
+```
+Reporting-Endpoints: default="https://in.forduty.com/your-site-token"
+```
+
+When either value is missing or blank, the middleware adds no header — a safe default for local and development environments.
+
+The middleware overwrites any existing `Reporting-Endpoints` header. To disable it for specific routes, use `withoutMiddleware()`:
+
+```php
+use Concept7\LaravelForduty\Http\Middleware\AddReportingEndpointsHeader;
+
+Route::get('/embed', EmbedController::class)
+    ->withoutMiddleware(AddReportingEndpointsHeader::class);
+```
+
+To attach it to other middleware groups such as `api`, append it in `bootstrap/app.php`:
+
+```php
+use Concept7\LaravelForduty\Http\Middleware\AddReportingEndpointsHeader;
+
+->withMiddleware(function (Middleware $middleware): void {
+    $middleware->api(append: AddReportingEndpointsHeader::class);
+})
+```
 
 ## Changelog
 
