@@ -36,20 +36,19 @@ php artisan vendor:publish --tag="laravel-forduty-config"
 
 ## Usage
 
-Add your for.duty reporting URL and site token to your `.env` file:
+Add your for.duty site token to your `.env` file:
 
 ```dotenv
-FORDUTY_BASE_URL=https://in.forduty.com
 FORDUTY_TOKEN=your-site-token
 ```
 
 That's it. The package automatically appends its middleware to the `web` middleware group, and every response will include a `Reporting-Endpoints` header pointing browsers at your for.duty endpoint:
 
 ```
-Reporting-Endpoints: default="https://in.forduty.com/your-site-token"
+Reporting-Endpoints: default="https://in.forduty.app/your-site-token"
 ```
 
-When either value is missing or blank, the middleware adds no header — a safe default for local and development environments.
+When the token is missing or blank, the middleware adds no header — a safe default for local and development environments. The reporting URL defaults to `https://in.forduty.app` and can be overridden with `FORDUTY_BASE_URL`.
 
 The middleware overwrites any existing `Reporting-Endpoints` header. To disable it for specific routes, use `withoutMiddleware()`:
 

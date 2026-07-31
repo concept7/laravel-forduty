@@ -17,16 +17,16 @@ it('attaches the middleware to the web group', function () {
 
 it('adds the reporting endpoints header when token and base url are set', function () {
     config()->set('laravel-forduty.token', 'abc123');
-    config()->set('laravel-forduty.base_url', 'https://in.forduty.com');
+    config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 
     $this->get('/forduty-test')
         ->assertOk()
-        ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.com/abc123"');
+        ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
 });
 
 it('adds no header when the token is missing', function () {
     config()->set('laravel-forduty.token', null);
-    config()->set('laravel-forduty.base_url', 'https://in.forduty.com');
+    config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 
     $this->get('/forduty-test')
         ->assertOk()
@@ -53,7 +53,7 @@ it('adds no header when both token and base url are missing', function () {
 
 it('adds no header when the token is an empty string', function () {
     config()->set('laravel-forduty.token', '');
-    config()->set('laravel-forduty.base_url', 'https://in.forduty.com');
+    config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 
     $this->get('/forduty-test')
         ->assertOk()
@@ -71,50 +71,50 @@ it('adds no header when the base url is an empty string', function () {
 
 it('normalizes a trailing slash on the base url', function () {
     config()->set('laravel-forduty.token', 'abc123');
-    config()->set('laravel-forduty.base_url', 'https://in.forduty.com/');
+    config()->set('laravel-forduty.base_url', 'https://in.forduty.app/');
 
     $this->get('/forduty-test')
         ->assertOk()
-        ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.com/abc123"');
+        ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
 });
 
 it('normalizes a leading slash on the token', function () {
     config()->set('laravel-forduty.token', '/abc123');
-    config()->set('laravel-forduty.base_url', 'https://in.forduty.com');
+    config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 
     $this->get('/forduty-test')
         ->assertOk()
-        ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.com/abc123"');
+        ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
 });
 
 it('appends the token to a base url that already has a path', function () {
     config()->set('laravel-forduty.token', 'abc123');
-    config()->set('laravel-forduty.base_url', 'https://in.forduty.com/ingest');
+    config()->set('laravel-forduty.base_url', 'https://in.forduty.app/ingest');
 
     $this->get('/forduty-test')
         ->assertOk()
-        ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.com/ingest/abc123"');
+        ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/ingest/abc123"');
 });
 
 it('overwrites an existing reporting endpoints header', function () {
     config()->set('laravel-forduty.token', 'abc123');
-    config()->set('laravel-forduty.base_url', 'https://in.forduty.com');
+    config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 
     Route::middleware('web')->get('/forduty-existing-header', fn () => response('ok')
         ->header('Reporting-Endpoints', 'default="https://example.com/other"'));
 
     $this->get('/forduty-existing-header')
         ->assertOk()
-        ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.com/abc123"');
+        ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
 });
 
 it('adds the header to redirect responses', function () {
     config()->set('laravel-forduty.token', 'abc123');
-    config()->set('laravel-forduty.base_url', 'https://in.forduty.com');
+    config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 
     Route::middleware('web')->get('/forduty-redirect', fn () => redirect('/forduty-test'));
 
     $this->get('/forduty-redirect')
         ->assertRedirect('/forduty-test')
-        ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.com/abc123"');
+        ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
 });

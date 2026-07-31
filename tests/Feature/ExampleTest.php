@@ -13,5 +13,6 @@ it('returns the same instance from the container', function () {
 });
 
 it('merges the package config', function () {
-    expect(config('laravel-forduty'))->toHaveKeys(['token', 'base_url']);
+    expect(config('laravel-forduty'))->toHaveKeys(['token', 'base_url'])
+        ->and(config('laravel-forduty.base_url'))->toBe('https://in.forduty.app');
 });
