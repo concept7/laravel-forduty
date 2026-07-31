@@ -1,7 +1,12 @@
 # Release Notes
 
-## [Unreleased](https://github.com/concept7/laravel-forduty/compare/v0.1.0...1.x)
+## [Unreleased](https://github.com/concept7/laravel-forduty/compare/v0.1.1...HEAD)
 
+## [v0.1.1](https://github.com/concept7/laravel-forduty/compare/v0.1.0...v0.1.1) - 2026-07-31
+
+### Changed
+
+- The reporting base URL now defaults to `https://in.forduty.app`, so only `FORDUTY_TOKEN` needs to be set. `FORDUTY_BASE_URL` still overrides the default when set.
 
 ## [v0.1.0](https://github.com/concept7/laravel-forduty/releases/tag/v0.1.0) - 2026-07-31
 
