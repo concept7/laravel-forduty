@@ -42,13 +42,15 @@ Add your for.duty site token to your `.env` file:
 FORDUTY_TOKEN=your-site-token
 ```
 
-That's it. The package automatically appends its middleware to the `web` middleware group, and every response will include a `Reporting-Endpoints` header pointing browsers at your for.duty endpoint:
+That's it. The package automatically appends its middleware to the `web` middleware group, so responses from routes in that group carry a `Reporting-Endpoints` header pointing browsers at your for.duty endpoint:
 
 ```
 Reporting-Endpoints: default="https://in.forduty.app/your-site-token"
 ```
 
-When the token is missing or blank, the middleware adds no header — a safe default for local and development environments. The reporting URL defaults to `https://in.forduty.app` and can be overridden with `FORDUTY_BASE_URL`.
+Because the header comes from group middleware, it covers the `web` group only. Requests that never match a route — 404s, for example — and routes in other groups such as `api` are served without it. See [below](#other-middleware-groups) for attaching the middleware elsewhere.
+
+The middleware adds no header when the token is missing or blank, or when the base URL is blank, unparseable, or not absolute. That keeps a misconfiguration from breaking responses, and makes local and development environments quiet by default. The reporting URL defaults to `https://in.forduty.app` and can be overridden with `FORDUTY_BASE_URL`.
 
 The middleware overwrites any existing `Reporting-Endpoints` header. To disable it for specific routes, use `withoutMiddleware()`:
 
@@ -58,6 +60,8 @@ use Concept7\LaravelForduty\Http\Middleware\AddReportingEndpointsHeader;
 Route::get('/embed', EmbedController::class)
     ->withoutMiddleware(AddReportingEndpointsHeader::class);
 ```
+
+### Other Middleware Groups
 
 To attach it to other middleware groups such as `api`, append it in `bootstrap/app.php`:
 
