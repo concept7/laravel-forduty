@@ -25,6 +25,9 @@ class AddReportingEndpointsHeader
             return $response;
         }
 
+        $token = trim($token);
+        $baseUrl = trim($baseUrl);
+
         $uri = Uri::of($baseUrl);
 
         $endpoint = $uri
