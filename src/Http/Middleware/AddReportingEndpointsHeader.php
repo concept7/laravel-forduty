@@ -21,7 +21,7 @@ class AddReportingEndpointsHeader
         $token = config('laravel-forduty.token');
         $baseUrl = config('laravel-forduty.base_url');
 
-        if (! is_string($token) || trim($token) === '' || ! is_string($baseUrl) || trim($baseUrl) === '') {
+        if (! is_string($token) || ! is_string($baseUrl) || blank($token) || blank($baseUrl)) {
             return $response;
         }
 
