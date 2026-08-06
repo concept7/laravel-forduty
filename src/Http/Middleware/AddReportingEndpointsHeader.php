@@ -33,7 +33,9 @@ class AddReportingEndpointsHeader
      * Resolve the configured ingest endpoint, or null when reporting is not
      * configured. A base URL or token that cannot be parsed as a URI yields
      * null rather than an exception, so a misconfiguration can never break
-     * the responses this middleware decorates.
+     * the responses this middleware decorates. Browsers only honour an
+     * absolute endpoint, so a base URL without a scheme and host is treated
+     * as unconfigured too.
      */
     protected function endpoint(): ?string
     {
@@ -47,8 +49,12 @@ class AddReportingEndpointsHeader
         $token = trim($token);
         $baseUrl = trim($baseUrl);
 
-        $endpoint = rescue(function () use ($baseUrl, $token): string {
+        $endpoint = rescue(function () use ($baseUrl, $token): ?string {
             $uri = Uri::of($baseUrl);
+
+            if (blank($uri->scheme()) || blank($uri->host())) {
+                return null;
+            }
 
             return $uri
                 ->withPath(rtrim($uri->path(), '/').'/'.ltrim($token, '/'))

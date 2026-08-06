@@ -124,6 +124,15 @@ it('adds no header when the token contains characters a uri cannot hold', functi
         ->assertHeaderMissing('X-Injected');
 });
 
+it('adds no header when the base url has no scheme or host', function () {
+    config()->set('laravel-forduty.token', 'abc123');
+    config()->set('laravel-forduty.base_url', 'in.forduty.app');
+
+    $this->get('/forduty-test')
+        ->assertOk()
+        ->assertHeaderMissing('Reporting-Endpoints');
+});
+
 it('overwrites an existing reporting endpoints header', function () {
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
