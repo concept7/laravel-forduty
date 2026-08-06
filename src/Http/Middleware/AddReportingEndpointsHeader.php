@@ -56,8 +56,10 @@ class AddReportingEndpointsHeader
                 return null;
             }
 
+            $basePath = $uri->path() === '/' ? '' : $uri->path();
+
             return $uri
-                ->withPath(rtrim($uri->path(), '/').'/'.ltrim($token, '/'))
+                ->withPath($basePath.'/'.ltrim($token, '/'))
                 ->value();
         }, report: false);
 
