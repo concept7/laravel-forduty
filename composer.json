@@ -1,7 +1,7 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
     "name": "concept7/laravel-forduty",
-    "description": "Test",
+    "description": "Point browsers at your for.duty ingest endpoint with a Reporting-Endpoints header.",
     "keywords": [
         "laravel",
         "concept7",
