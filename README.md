@@ -6,7 +6,7 @@
     <a href="https://packagist.org/packages/concept7/laravel-forduty"><img src="https://img.shields.io/packagist/v/concept7/laravel-forduty.svg?style=flat-square" alt="Packagist"></a>
     <a href="https://packagist.org/packages/concept7/laravel-forduty"><img src="https://img.shields.io/packagist/php-v/concept7/laravel-forduty.svg?style=flat-square" alt="PHP from Packagist"></a>
     <a href="https://packagist.org/packages/concept7/laravel-forduty"><img src="https://badge.laravel.cloud/badge/concept7/laravel-forduty?style=flat" alt="Laravel versions"></a>
-    <a href="https://github.com/concept7/laravel-forduty/actions"><img alt="GitHub Workflow Status (main)" src="https://img.shields.io/github/actions/workflow/status/concept7/laravel-forduty/tests.yml?branch=main&label=Tests&style=flat-square"></a>
+    <a href="https://github.com/concept7/laravel-forduty/actions"><img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/concept7/laravel-forduty/tests.yml?label=Tests&style=flat-square"></a>
     <a href="https://packagist.org/packages/concept7/laravel-forduty"><img src="https://img.shields.io/packagist/dt/concept7/laravel-forduty.svg?style=flat-square" alt="Total Downloads"></a>
 </p>
 
