@@ -6,6 +6,6 @@ return [
 
     'token' => env('FORDUTY_TOKEN'),
 
-    'base_url' => env('FORDUTY_BASE_URL', 'https://in.forduty.app'),
+    'base_url' => trim((string) env('FORDUTY_BASE_URL')) ?: 'https://in.forduty.app',
 
 ];
