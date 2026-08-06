@@ -61,6 +61,21 @@ Route::get('/embed', EmbedController::class)
     ->withoutMiddleware(AddReportingEndpointsHeader::class);
 ```
 
+### Opting Report Types In
+
+`Reporting-Endpoints` only names the endpoints a browser is allowed to deliver reports to. Which reports actually get sent depends on the report type:
+
+- **Deprecations, interventions and crashes** are delivered to the `default` endpoint on their own. The header above is all they need.
+- **CSP violations** are only reported once your `Content-Security-Policy` header points at the endpoint with a `report-to` directive:
+
+  ```
+  Content-Security-Policy: default-src 'self'; report-to default
+  ```
+
+- **Network errors** require an additional `NEL` header.
+
+This package sets `Reporting-Endpoints` and nothing else, so it does not turn CSP or network error reporting on by itself. If you build your policy with a package such as [spatie/laravel-csp](https://github.com/spatie/laravel-csp), add the `report-to default` directive to it.
+
 ### Other Middleware Groups
 
 To attach it to other middleware groups such as `api`, append it in `bootstrap/app.php`:
