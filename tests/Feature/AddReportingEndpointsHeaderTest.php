@@ -7,19 +7,21 @@ use Concept7\LaravelForduty\LaravelFordutyServiceProvider;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
 use Illuminate\Foundation\Application;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 
-beforeEach(function () {
+beforeEach(function (): void {
     Route::middleware('web')->get('/forduty-test', fn (): string => 'ok');
 });
 
-it('attaches the middleware to the web group', function () {
+it('attaches the middleware to the web group', function (): void {
     expect(app(Router::class)->getMiddlewareGroups()['web'])
         ->toContain(AddReportingEndpointsHeader::class);
 });
 
-it('keeps middleware another provider pushed onto the router web group', function () {
+it('keeps middleware another provider pushed onto the router web group', function (): void {
     Route::pushMiddlewareToGroup('web', 'Other\\Package\\Middleware');
 
     (new LaravelFordutyServiceProvider(app()))->boot();
@@ -29,14 +31,15 @@ it('keeps middleware another provider pushed onto the router web group', functio
         ->toContain(AddReportingEndpointsHeader::class);
 });
 
-it('boots without an http kernel bound', function () {
+it('boots without an http kernel bound', function (): void {
     $application = new Application(base_path());
 
-    expect(fn () => (new LaravelFordutyServiceProvider($application))->boot())
-        ->not->toThrow(BindingResolutionException::class);
+    expect(function () use ($application): void {
+        (new LaravelFordutyServiceProvider($application))->boot();
+    })->not->toThrow(BindingResolutionException::class);
 });
 
-it('adds the reporting endpoints header when token and base url are set', function () {
+it('adds the reporting endpoints header when token and base url are set', function (): void {
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 
@@ -45,7 +48,7 @@ it('adds the reporting endpoints header when token and base url are set', functi
         ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
 });
 
-it('adds no header when the token is missing', function () {
+it('adds no header when the token is missing', function (): void {
     config()->set('laravel-forduty.token', null);
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 
@@ -54,7 +57,7 @@ it('adds no header when the token is missing', function () {
         ->assertHeaderMissing('Reporting-Endpoints');
 });
 
-it('adds no header when the base url is missing', function () {
+it('adds no header when the base url is missing', function (): void {
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', null);
 
@@ -63,7 +66,7 @@ it('adds no header when the base url is missing', function () {
         ->assertHeaderMissing('Reporting-Endpoints');
 });
 
-it('adds no header when both token and base url are missing', function () {
+it('adds no header when both token and base url are missing', function (): void {
     config()->set('laravel-forduty.token', null);
     config()->set('laravel-forduty.base_url', null);
 
@@ -72,7 +75,7 @@ it('adds no header when both token and base url are missing', function () {
         ->assertHeaderMissing('Reporting-Endpoints');
 });
 
-it('adds no header when the token is an empty string', function () {
+it('adds no header when the token is an empty string', function (): void {
     config()->set('laravel-forduty.token', '');
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 
@@ -81,7 +84,7 @@ it('adds no header when the token is an empty string', function () {
         ->assertHeaderMissing('Reporting-Endpoints');
 });
 
-it('adds no header when the base url is an empty string', function () {
+it('adds no header when the base url is an empty string', function (): void {
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', '');
 
@@ -90,7 +93,7 @@ it('adds no header when the base url is an empty string', function () {
         ->assertHeaderMissing('Reporting-Endpoints');
 });
 
-it('normalizes a trailing slash on the base url', function () {
+it('normalizes a trailing slash on the base url', function (): void {
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app/');
 
@@ -99,7 +102,7 @@ it('normalizes a trailing slash on the base url', function () {
         ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
 });
 
-it('normalizes a leading slash on the token', function () {
+it('normalizes a leading slash on the token', function (): void {
     config()->set('laravel-forduty.token', '/abc123');
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 
@@ -108,7 +111,7 @@ it('normalizes a leading slash on the token', function () {
         ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
 });
 
-it('trims surrounding whitespace off the token and base url', function () {
+it('trims surrounding whitespace off the token and base url', function (): void {
     config()->set('laravel-forduty.token', '  abc123  ');
     config()->set('laravel-forduty.base_url', '  https://in.forduty.app  ');
 
@@ -117,7 +120,7 @@ it('trims surrounding whitespace off the token and base url', function () {
         ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
 });
 
-it('appends the token to a base url that already has a path', function () {
+it('appends the token to a base url that already has a path', function (): void {
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app/ingest');
 
@@ -126,7 +129,7 @@ it('appends the token to a base url that already has a path', function () {
         ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/ingest/abc123"');
 });
 
-it('adds no header when the base url cannot be parsed', function () {
+it('adds no header when the base url cannot be parsed', function (): void {
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', 'https://in forduty.app');
 
@@ -135,7 +138,7 @@ it('adds no header when the base url cannot be parsed', function () {
         ->assertHeaderMissing('Reporting-Endpoints');
 });
 
-it('adds no header when the token contains characters a uri cannot hold', function () {
+it('adds no header when the token contains characters a uri cannot hold', function (): void {
     config()->set('laravel-forduty.token', "abc123\r\nX-Injected: 1");
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 
@@ -145,7 +148,7 @@ it('adds no header when the token contains characters a uri cannot hold', functi
         ->assertHeaderMissing('X-Injected');
 });
 
-it('adds no header when the base url has no scheme or host', function () {
+it('adds no header when the base url has no scheme or host', function (): void {
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', 'in.forduty.app');
 
@@ -154,11 +157,11 @@ it('adds no header when the base url has no scheme or host', function () {
         ->assertHeaderMissing('Reporting-Endpoints');
 });
 
-it('overwrites an existing reporting endpoints header', function () {
+it('overwrites an existing reporting endpoints header', function (): void {
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 
-    Route::middleware('web')->get('/forduty-existing-header', fn () => response('ok')
+    Route::middleware('web')->get('/forduty-existing-header', fn (): Response => response('ok')
         ->header('Reporting-Endpoints', 'default="https://example.com/other"'));
 
     $this->get('/forduty-existing-header')
@@ -166,7 +169,7 @@ it('overwrites an existing reporting endpoints header', function () {
         ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
 });
 
-it('adds no header to routes outside the web group', function () {
+it('adds no header to routes outside the web group', function (): void {
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 
@@ -177,7 +180,7 @@ it('adds no header to routes outside the web group', function () {
         ->assertHeaderMissing('Reporting-Endpoints');
 });
 
-it('can be appended to another middleware group', function () {
+it('can be appended to another middleware group', function (): void {
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 
@@ -190,7 +193,7 @@ it('can be appended to another middleware group', function () {
         ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
 });
 
-it('can be excluded from a single route', function () {
+it('can be excluded from a single route', function (): void {
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 
@@ -203,11 +206,11 @@ it('can be excluded from a single route', function () {
         ->assertHeaderMissing('Reporting-Endpoints');
 });
 
-it('adds the header to redirect responses', function () {
+it('adds the header to redirect responses', function (): void {
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 
-    Route::middleware('web')->get('/forduty-redirect', fn () => redirect('/forduty-test'));
+    Route::middleware('web')->get('/forduty-redirect', fn (): RedirectResponse => redirect('/forduty-test'));
 
     $this->get('/forduty-redirect')
         ->assertRedirect('/forduty-test')
