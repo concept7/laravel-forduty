@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Concept7\LaravelForduty\Http\Middleware\AddReportingEndpointsHeader;
 use Concept7\LaravelForduty\LaravelFordutyServiceProvider;
 use Illuminate\Contracts\Container\BindingResolutionException;
+use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
 use Illuminate\Foundation\Application;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
@@ -163,6 +164,43 @@ it('overwrites an existing reporting endpoints header', function () {
     $this->get('/forduty-existing-header')
         ->assertOk()
         ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
+});
+
+it('adds no header to routes outside the web group', function () {
+    config()->set('laravel-forduty.token', 'abc123');
+    config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
+
+    Route::middleware('api')->get('/forduty-api', fn (): string => 'ok');
+
+    $this->get('/forduty-api')
+        ->assertOk()
+        ->assertHeaderMissing('Reporting-Endpoints');
+});
+
+it('can be appended to another middleware group', function () {
+    config()->set('laravel-forduty.token', 'abc123');
+    config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
+
+    app(HttpKernelContract::class)->appendMiddlewareToGroup('api', AddReportingEndpointsHeader::class);
+
+    Route::middleware('api')->get('/forduty-api-appended', fn (): string => 'ok');
+
+    $this->get('/forduty-api-appended')
+        ->assertOk()
+        ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
+});
+
+it('can be excluded from a single route', function () {
+    config()->set('laravel-forduty.token', 'abc123');
+    config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
+
+    Route::middleware('web')
+        ->get('/forduty-excluded', fn (): string => 'ok')
+        ->withoutMiddleware(AddReportingEndpointsHeader::class);
+
+    $this->get('/forduty-excluded')
+        ->assertOk()
+        ->assertHeaderMissing('Reporting-Endpoints');
 });
 
 it('adds the header to redirect responses', function () {
