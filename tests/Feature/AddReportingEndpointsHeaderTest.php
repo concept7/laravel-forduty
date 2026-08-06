@@ -18,6 +18,16 @@ it('attaches the middleware to the web group', function () {
         ->toContain(AddReportingEndpointsHeader::class);
 });
 
+it('keeps middleware another provider pushed onto the router web group', function () {
+    Route::pushMiddlewareToGroup('web', 'Other\\Package\\Middleware');
+
+    (new LaravelFordutyServiceProvider(app()))->boot();
+
+    expect(app(Router::class)->getMiddlewareGroups()['web'])
+        ->toContain('Other\\Package\\Middleware')
+        ->toContain(AddReportingEndpointsHeader::class);
+});
+
 it('boots without an http kernel bound', function () {
     $application = new Application(base_path());
 
