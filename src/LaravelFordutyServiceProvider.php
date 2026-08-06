@@ -26,7 +26,9 @@ class LaravelFordutyServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->appendMiddlewareToWebGroup($this->app->make(HttpKernelContract::class));
+        if ($this->app->bound(HttpKernelContract::class)) {
+            $this->appendMiddlewareToWebGroup($this->app->make(HttpKernelContract::class));
+        }
 
         if ($this->app->runningInConsole()) {
             $this->publishes([

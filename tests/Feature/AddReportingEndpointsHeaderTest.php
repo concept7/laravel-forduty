@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use Concept7\LaravelForduty\Http\Middleware\AddReportingEndpointsHeader;
+use Concept7\LaravelForduty\LaravelFordutyServiceProvider;
+use Illuminate\Contracts\Container\BindingResolutionException;
+use Illuminate\Foundation\Application;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 
@@ -13,6 +16,13 @@ beforeEach(function () {
 it('attaches the middleware to the web group', function () {
     expect(app(Router::class)->getMiddlewareGroups()['web'])
         ->toContain(AddReportingEndpointsHeader::class);
+});
+
+it('boots without an http kernel bound', function () {
+    $application = new Application(base_path());
+
+    expect(fn () => (new LaravelFordutyServiceProvider($application))->boot())
+        ->not->toThrow(BindingResolutionException::class);
 });
 
 it('adds the reporting endpoints header when token and base url are set', function () {
