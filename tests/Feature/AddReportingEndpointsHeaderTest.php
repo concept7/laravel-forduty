@@ -157,6 +157,47 @@ it('adds no header when the base url has no scheme or host', function (): void {
         ->assertHeaderMissing('Reporting-Endpoints');
 });
 
+it('adds no header when the base url scheme is not http or https', function (string $baseUrl): void {
+    config()->set('laravel-forduty.token', 'abc123');
+    config()->set('laravel-forduty.base_url', $baseUrl);
+
+    $this->get('/forduty-test')
+        ->assertOk()
+        ->assertHeaderMissing('Reporting-Endpoints');
+})->with([
+    'ftp://in.forduty.app',
+    'wss://in.forduty.app',
+]);
+
+it('adds the header for a plain http base url', function (): void {
+    config()->set('laravel-forduty.token', 'abc123');
+    config()->set('laravel-forduty.base_url', 'http://forduty.test');
+
+    $this->get('/forduty-test')
+        ->assertOk()
+        ->assertHeader('Reporting-Endpoints', 'default="http://forduty.test/abc123"');
+});
+
+it('adds no header when the base url carries credentials', function (): void {
+    config()->set('laravel-forduty.token', 'abc123');
+    config()->set('laravel-forduty.base_url', 'https://user:secret@in.forduty.app');
+
+    $response = $this->get('/forduty-test')->assertOk();
+
+    $response->assertHeaderMissing('Reporting-Endpoints');
+
+    expect($response->headers->all())->not->toContain('secret');
+});
+
+it('drops a fragment from the base url', function (): void {
+    config()->set('laravel-forduty.token', 'abc123');
+    config()->set('laravel-forduty.base_url', 'https://in.forduty.app#fragment');
+
+    $this->get('/forduty-test')
+        ->assertOk()
+        ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
+});
+
 it('overwrites an existing reporting endpoints header', function (): void {
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
@@ -167,6 +208,15 @@ it('overwrites an existing reporting endpoints header', function (): void {
     $this->get('/forduty-existing-header')
         ->assertOk()
         ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
+});
+
+it('adds no header to a request that matches no route', function (): void {
+    config()->set('laravel-forduty.token', 'abc123');
+    config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
+
+    $this->get('/forduty-no-such-route')
+        ->assertNotFound()
+        ->assertHeaderMissing('Reporting-Endpoints');
 });
 
 it('adds no header to routes outside the web group', function (): void {

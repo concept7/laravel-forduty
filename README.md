@@ -50,7 +50,7 @@ Reporting-Endpoints: default="https://in.forduty.app/your-site-token"
 
 Because the header comes from group middleware, it covers the `web` group only. Requests that never match a route — 404s, for example — and routes in other groups such as `api` are served without it. See [below](#other-middleware-groups) for attaching the middleware elsewhere.
 
-The middleware adds no header when the token is missing or blank, or when the base URL is blank, unparseable, or not absolute. That keeps a misconfiguration from breaking responses, and makes local and development environments quiet by default. The reporting URL defaults to `https://in.forduty.app` and can be overridden with `FORDUTY_BASE_URL`.
+The middleware adds no header when the token is missing or blank, or when the base URL is blank, unparseable, not an absolute `http` or `https` URL, or carries credentials. That keeps a misconfiguration from breaking responses, and makes local and development environments quiet by default. The reporting URL defaults to `https://in.forduty.app` and can be overridden with `FORDUTY_BASE_URL`.
 
 The middleware overwrites any existing `Reporting-Endpoints` header. To disable it for specific routes, use `withoutMiddleware()`:
 
