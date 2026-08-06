@@ -18,24 +18,43 @@ class AddReportingEndpointsHeader
     {
         $response = $next($request);
 
+        $endpoint = $this->endpoint();
+
+        if (blank($endpoint)) {
+            return $response;
+        }
+
+        $response->headers->set('Reporting-Endpoints', sprintf('default="%s"', $endpoint));
+
+        return $response;
+    }
+
+    /**
+     * Resolve the configured ingest endpoint, or null when reporting is not
+     * configured. A base URL or token that cannot be parsed as a URI yields
+     * null rather than an exception, so a misconfiguration can never break
+     * the responses this middleware decorates.
+     */
+    protected function endpoint(): ?string
+    {
         $token = config('laravel-forduty.token');
         $baseUrl = config('laravel-forduty.base_url');
 
         if (! is_string($token) || ! is_string($baseUrl) || blank($token) || blank($baseUrl)) {
-            return $response;
+            return null;
         }
 
         $token = trim($token);
         $baseUrl = trim($baseUrl);
 
-        $uri = Uri::of($baseUrl);
+        $endpoint = rescue(function () use ($baseUrl, $token): string {
+            $uri = Uri::of($baseUrl);
 
-        $endpoint = $uri
-            ->withPath(rtrim($uri->path(), '/').'/'.ltrim($token, '/'))
-            ->value();
+            return $uri
+                ->withPath(rtrim($uri->path(), '/').'/'.ltrim($token, '/'))
+                ->value();
+        }, report: false);
 
-        $response->headers->set('Reporting-Endpoints', sprintf('default="%s"', $endpoint));
-
-        return $response;
+        return is_string($endpoint) ? $endpoint : null;
     }
 }

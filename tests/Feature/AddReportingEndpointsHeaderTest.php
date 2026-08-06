@@ -105,6 +105,25 @@ it('appends the token to a base url that already has a path', function () {
         ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/ingest/abc123"');
 });
 
+it('adds no header when the base url cannot be parsed', function () {
+    config()->set('laravel-forduty.token', 'abc123');
+    config()->set('laravel-forduty.base_url', 'https://in forduty.app');
+
+    $this->get('/forduty-test')
+        ->assertOk()
+        ->assertHeaderMissing('Reporting-Endpoints');
+});
+
+it('adds no header when the token contains characters a uri cannot hold', function () {
+    config()->set('laravel-forduty.token', "abc123\r\nX-Injected: 1");
+    config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
+
+    $this->get('/forduty-test')
+        ->assertOk()
+        ->assertHeaderMissing('Reporting-Endpoints')
+        ->assertHeaderMissing('X-Injected');
+});
+
 it('overwrites an existing reporting endpoints header', function () {
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
