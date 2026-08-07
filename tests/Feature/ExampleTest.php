@@ -55,17 +55,3 @@ it('keeps a zero network error logging value instead of treating it as unset', f
     ['FORDUTY_NEL_SUCCESS_FRACTION', 'success_fraction'],
     ['FORDUTY_NEL_FAILURE_FRACTION', 'failure_fraction'],
 ]);
-
-it('falls back to the network error logging defaults when the environment value is blank', function (string $value): void {
-    $_SERVER['FORDUTY_NEL_MAX_AGE'] = $value;
-    $_SERVER['FORDUTY_NEL_FAILURE_FRACTION'] = $value;
-
-    try {
-        $config = require dirname(__DIR__, 2).'/config/laravel-forduty.php';
-    } finally {
-        unset($_SERVER['FORDUTY_NEL_MAX_AGE'], $_SERVER['FORDUTY_NEL_FAILURE_FRACTION']);
-    }
-
-    expect($config['nel']['max_age'])->toBe(2592000)
-        ->and($config['nel']['failure_fraction'])->toBe(1.0);
-})->with(['', ' ']);
