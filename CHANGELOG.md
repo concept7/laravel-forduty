@@ -2,6 +2,19 @@
 
 ## [Unreleased](https://github.com/concept7/laravel-forduty/compare/v0.3.0...HEAD)
 
+### Fixed
+
+- Both middlewares now run on the global middleware stack instead of the `web` group, so every response carries the headers.
+
+  Registering on the `web` group quietly excluded anything that brings its own middleware list, a Filament panel most of all. On those pages a `Content-Security-Policy` added globally still ended in `report-to default`, but the `Reporting-Endpoints` header naming that group never arrived, and a browser handed a group it has no endpoint for logs the violation to the console and throws the report away. An application could run for weeks with a correct policy, visible violations, and nothing at all coming in.
+
+  Requests that match no route — 404s — and routes in groups such as `api` are covered now as well. Responses the application never sees, such as static files served by the web server, still are not.
+
+### Changed
+
+- Per-route `withoutMiddleware()` keeps working, even though global middleware is normally beyond its reach: both middlewares check the matched route for their own exclusion before writing a header. The documented opt-out is unchanged.
+- The README section on attaching the middleware to other middleware groups is gone, along with the need for it.
+
 ## [v0.3.0](https://github.com/concept7/laravel-forduty/compare/v0.2.1...v0.3.0) - 2026-08-07
 
 ### Added

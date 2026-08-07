@@ -6,29 +6,30 @@ use Concept7\LaravelForduty\Http\Middleware\AddReportingEndpointsHeader;
 use Concept7\LaravelForduty\LaravelFordutyServiceProvider;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
-use Illuminate\Routing\Router;
+use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
 
 beforeEach(function (): void {
     Route::middleware('web')->get('/forduty-test', fn (): string => 'ok');
 });
 
-it('attaches the middleware to the web group', function (): void {
-    expect(app(Router::class)->getMiddlewareGroups()['web'])
+it('attaches the middleware to the global stack', function (): void {
+    expect(app(HttpKernelContract::class)->getGlobalMiddleware())
         ->toContain(AddReportingEndpointsHeader::class);
 });
 
-it('keeps middleware another provider pushed onto the router web group', function (): void {
-    Route::pushMiddlewareToGroup('web', 'Other\\Package\\Middleware');
-
+it('attaches the middleware once, however often the provider boots', function (): void {
     (new LaravelFordutyServiceProvider(app()))->boot();
 
-    expect(app(Router::class)->getMiddlewareGroups()['web'])
-        ->toContain('Other\\Package\\Middleware')
-        ->toContain(AddReportingEndpointsHeader::class);
+    $registrations = collect(app(HttpKernelContract::class)->getGlobalMiddleware())
+        ->filter(fn (string $middleware): bool => $middleware === AddReportingEndpointsHeader::class);
+
+    expect($registrations)->toHaveCount(1);
 });
 
 it('boots without an http kernel bound', function (): void {
@@ -210,16 +211,16 @@ it('overwrites an existing reporting endpoints header', function (): void {
         ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
 });
 
-it('adds no header to a request that matches no route', function (): void {
+it('adds the header to a request that matches no route', function (): void {
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 
     $this->get('/forduty-no-such-route')
         ->assertNotFound()
-        ->assertHeaderMissing('Reporting-Endpoints');
+        ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
 });
 
-it('adds no header to routes outside the web group', function (): void {
+it('adds the header to routes outside the web group', function (): void {
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 
@@ -227,18 +228,31 @@ it('adds no header to routes outside the web group', function (): void {
 
     $this->get('/forduty-api')
         ->assertOk()
-        ->assertHeaderMissing('Reporting-Endpoints');
+        ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
 });
 
-it('can be appended to another middleware group', function (): void {
+it('adds the header to routes carrying their own middleware stack', function (): void {
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 
-    app(HttpKernelContract::class)->appendMiddlewareToGroup('api', AddReportingEndpointsHeader::class);
+    Route::middleware([
+        EncryptCookies::class,
+        StartSession::class,
+        SubstituteBindings::class,
+    ])->get('/forduty-own-stack', fn (): string => 'ok');
 
-    Route::middleware('api')->get('/forduty-api-appended', fn (): string => 'ok');
+    $this->get('/forduty-own-stack')
+        ->assertOk()
+        ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
+});
 
-    $this->get('/forduty-api-appended')
+it('adds the header to routes in no group at all', function (): void {
+    config()->set('laravel-forduty.token', 'abc123');
+    config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
+
+    Route::get('/forduty-bare', fn (): string => 'ok');
+
+    $this->get('/forduty-bare')
         ->assertOk()
         ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
 });

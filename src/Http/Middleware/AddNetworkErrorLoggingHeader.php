@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Concept7\LaravelForduty\Http\Middleware;
 
 use Closure;
+use Concept7\LaravelForduty\Concerns\RespectsRouteExclusions;
 use Concept7\LaravelForduty\LaravelForduty;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class AddNetworkErrorLoggingHeader
 {
+    use RespectsRouteExclusions;
+
     /**
      * The reporting group this policy delivers to. Matches the group name
      * AddReportingEndpointsHeader declares, since a NEL policy can only name
@@ -26,6 +29,10 @@ class AddNetworkErrorLoggingHeader
     public function handle(Request $request, Closure $next): Response
     {
         $response = $next($request);
+
+        if ($this->isExcludedFromRoute($request)) {
+            return $response;
+        }
 
         if (blank($this->forduty->endpoint())) {
             return $response;

@@ -8,7 +8,6 @@ use Concept7\LaravelForduty\Http\Middleware\AddNetworkErrorLoggingHeader;
 use Concept7\LaravelForduty\Http\Middleware\AddReportingEndpointsHeader;
 use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
-use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 
 class LaravelFordutyServiceProvider extends ServiceProvider
@@ -37,7 +36,7 @@ class LaravelFordutyServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if ($this->app->bound(HttpKernelContract::class)) {
-            $this->appendMiddlewareToWebGroup($this->app->make(HttpKernelContract::class));
+            $this->appendMiddlewareToGlobalStack($this->app->make(HttpKernelContract::class));
         }
 
         if ($this->app->runningInConsole()) {
@@ -48,34 +47,27 @@ class LaravelFordutyServiceProvider extends ServiceProvider
     }
 
     /**
-     * Append this package's middleware to the web group on the kernel, so the
-     * registration survives the kernel's own middleware sync to the router.
+     * Append this package's middleware to the global middleware stack, so every
+     * response the application returns carries the headers.
      *
-     * That sync replaces the router's groups with the kernel's copy, which
-     * drops any middleware another provider pushed straight onto the router.
-     * Those entries are collected once, before either append, and pushed back
-     * afterwards, so the group is left exactly as it was found plus this
-     * package's middleware.
+     * The `web` group is not enough. Anything that brings its own stack never
+     * sees it — a Filament panel passes an explicit middleware list, and so do
+     * plenty of hand-rolled route groups — while a `Content-Security-Policy`
+     * added globally still names the `default` reporting group on those same
+     * responses. A browser handed a group it was never given an endpoint for
+     * drops every report it would otherwise have delivered, silently.
+     *
+     * `pushMiddleware()` skips a class already in the stack, so an application
+     * that registers either middleware itself does not get it twice.
      */
-    protected function appendMiddlewareToWebGroup(HttpKernelContract $kernel): void
+    protected function appendMiddlewareToGlobalStack(HttpKernelContract $kernel): void
     {
-        if (! $kernel instanceof HttpKernel || ! array_key_exists('web', $kernel->getMiddlewareGroups())) {
+        if (! $kernel instanceof HttpKernel) {
             return;
         }
 
-        $router = $this->app->make(Router::class);
-
-        $pushedOntoRouterOnly = array_diff(
-            data_get($router->getMiddlewareGroups(), 'web', []),
-            data_get($kernel->getMiddlewareGroups(), 'web', []),
-        );
-
         foreach (self::MIDDLEWARE as $middleware) {
-            $kernel->appendMiddlewareToGroup('web', $middleware);
-        }
-
-        foreach ($pushedOntoRouterOnly as $middleware) {
-            $router->pushMiddlewareToGroup('web', $middleware);
+            $kernel->pushMiddleware($middleware);
         }
     }
 }
