@@ -1,6 +1,20 @@
 # Release Notes
 
-## [Unreleased](https://github.com/concept7/laravel-forduty/compare/v0.2.1...HEAD)
+## [Unreleased](https://github.com/concept7/laravel-forduty/compare/v0.3.0...HEAD)
+
+## [v0.3.0](https://github.com/concept7/laravel-forduty/compare/v0.2.1...v0.3.0) - 2026-08-07
+
+### Added
+
+- An optional `NEL` header, which asks browsers to report requests that failed before your application saw them — DNS failures, TCP resets, TLS errors, aborted connections. It is off by default; set `FORDUTY_NEL_ENABLED=true` to turn it on. `FORDUTY_NEL_MAX_AGE`, `FORDUTY_NEL_INCLUDE_SUBDOMAINS`, `FORDUTY_NEL_SUCCESS_FRACTION` and `FORDUTY_NEL_FAILURE_FRACTION` tune the policy.
+
+  The header comes from a separate `AddNetworkErrorLoggingHeader` middleware, so each header can be excluded per route with `withoutMiddleware()`. A NEL policy is inert without an endpoint to name, so it is only emitted when one resolves. As elsewhere in the package, a value a browser would reject means no header rather than a corrected one.
+
+  Note that browsers only honour `NEL` over HTTPS, and the policy needs `Reporting-Endpoints` on the same responses.
+
+### Changed
+
+- Endpoint resolution moved from `AddReportingEndpointsHeader` into the `LaravelForduty` singleton, which both middlewares now share. The `Reporting-Endpoints` header behaves exactly as before.
 
 ## [v0.2.1](https://github.com/concept7/laravel-forduty/compare/v0.2.0...v0.2.1) - 2026-08-07
 
