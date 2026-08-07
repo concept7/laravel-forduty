@@ -61,6 +61,8 @@ Route::get('/embed', EmbedController::class)
     ->withoutMiddleware(AddReportingEndpointsHeader::class);
 ```
 
+The package registers a second middleware, `AddNetworkErrorLoggingHeader`, which is dormant until you opt in — see [Network Error Logging](#network-error-logging).
+
 ### Opting Report Types In
 
 `Reporting-Endpoints` only names the endpoints a browser is allowed to deliver reports to. Which reports actually get sent depends on the report type:
@@ -72,19 +74,60 @@ Route::get('/embed', EmbedController::class)
   Content-Security-Policy: default-src 'self'; report-to default
   ```
 
-- **Network errors** require an additional `NEL` header.
+- **Network errors** require an additional `NEL` header, which this package can send for you — see [Network Error Logging](#network-error-logging).
 
-This package sets `Reporting-Endpoints` and nothing else, so it does not turn CSP or network error reporting on by itself. If you build your policy with a package such as [spatie/laravel-csp](https://github.com/spatie/laravel-csp), add the `report-to default` directive to it.
+CSP reporting is the one this package cannot turn on for you, because the directive belongs to a header it does not own. If you build your policy with a package such as [spatie/laravel-csp](https://github.com/spatie/laravel-csp), add the `report-to default` directive to it.
+
+### Network Error Logging
+
+Network Error Logging asks the browser to report requests that failed before your application ever saw them — DNS failures, TCP resets, TLS errors, aborted connections. It is off by default. Enable it with:
+
+```dotenv
+FORDUTY_NEL_ENABLED=true
+```
+
+Responses in the `web` group then carry a policy alongside the endpoints header:
+
+```
+NEL: {"report_to":"default","max_age":2592000,"include_subdomains":false,"success_fraction":0,"failure_fraction":1}
+```
+
+Four optional variables tune it:
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `FORDUTY_NEL_MAX_AGE` | `2592000` | How long, in seconds, the browser keeps the policy. `0` clears a policy it already holds. |
+| `FORDUTY_NEL_INCLUDE_SUBDOMAINS` | `false` | Whether the policy also covers subdomains. |
+| `FORDUTY_NEL_SUCCESS_FRACTION` | `0.0` | Fraction of *successful* requests to report. Raise this only deliberately — at `1.0` the browser reports every request your site makes. |
+| `FORDUTY_NEL_FAILURE_FRACTION` | `1.0` | Fraction of *failed* requests to report. Lower this to sample on a high-traffic site. |
+
+Two things to know:
+
+- **Browsers only honour `NEL` over HTTPS.** Over plain `http` the header is sent and ignored, so local development stays quiet on its own.
+- **The policy needs `Reporting-Endpoints` on the same responses.** `report_to` names the `default` group that the other middleware declares, so excluding `AddReportingEndpointsHeader` while keeping this one leaves the browser with a policy it cannot deliver to.
+
+As with the endpoints header, a value a browser would reject — a negative or fractional `max_age`, a sampling fraction outside `0.0`–`1.0` — means no header at all rather than a silently corrected one. To disable it per route:
+
+```php
+use Concept7\LaravelForduty\Http\Middleware\AddNetworkErrorLoggingHeader;
+
+Route::get('/embed', EmbedController::class)
+    ->withoutMiddleware(AddNetworkErrorLoggingHeader::class);
+```
 
 ### Other Middleware Groups
 
-To attach it to other middleware groups such as `api`, append it in `bootstrap/app.php`:
+To attach the middleware to other groups such as `api`, append it in `bootstrap/app.php`:
 
 ```php
+use Concept7\LaravelForduty\Http\Middleware\AddNetworkErrorLoggingHeader;
 use Concept7\LaravelForduty\Http\Middleware\AddReportingEndpointsHeader;
 
 ->withMiddleware(function (Middleware $middleware): void {
-    $middleware->api(append: AddReportingEndpointsHeader::class);
+    $middleware->api(append: [
+        AddReportingEndpointsHeader::class,
+        AddNetworkErrorLoggingHeader::class,
+    ]);
 })
 ```
 
