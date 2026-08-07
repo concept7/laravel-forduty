@@ -1,6 +1,16 @@
 # Release Notes
 
-## [Unreleased](https://github.com/concept7/laravel-forduty/compare/v0.2.0...HEAD)
+## [Unreleased](https://github.com/concept7/laravel-forduty/compare/v0.2.1...HEAD)
+
+## [v0.2.1](https://github.com/concept7/laravel-forduty/compare/v0.2.0...v0.2.1) - 2026-08-07
+
+### Fixed
+
+- v0.2.0 emitted no `Reporting-Endpoints` header at all on Laravel 12. The endpoint was built with `Illuminate\Support\Uri::withoutFragment()`, which only exists in Laravel 13; on Laravel 12 the call reached `Macroable::__call` and threw, and because the endpoint is built inside `rescue(..., report: false)` the exception was swallowed. The result was a package that silently did nothing, with no log line explaining why.
+
+### Changed
+
+- The package now requires Laravel 13. Laravel 12 is no longer supported, which makes the declared support matrix honest — it never worked there. `orchestra/testbench` follows to `^11.0`. PHP requirements are unchanged at `^8.3`.
 
 ## [v0.2.0](https://github.com/concept7/laravel-forduty/compare/v0.1.1...v0.2.0) - 2026-08-06
 
