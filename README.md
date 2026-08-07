@@ -42,17 +42,17 @@ Add your for.duty site token to your `.env` file:
 FORDUTY_TOKEN=your-site-token
 ```
 
-That's it. The package automatically appends its middleware to the `web` middleware group, so responses from routes in that group carry a `Reporting-Endpoints` header pointing browsers at your for.duty endpoint:
+That's it. The package automatically appends its middleware to the global middleware stack, so every response your application returns carries a `Reporting-Endpoints` header pointing browsers at your for.duty endpoint:
 
 ```
 Reporting-Endpoints: default="https://in.forduty.app/your-site-token"
 ```
 
-Because the header comes from group middleware, it covers the `web` group only. Requests that never match a route — 404s, for example — and routes in other groups such as `api` are served without it. See [below](#other-middleware-groups) for attaching the middleware elsewhere.
+The global stack is deliberate: a browser only delivers a report to an endpoint group it has been given on that same response, so anything the header misses reports nothing. Routes in the `api` group, routes that bring their own middleware list — a Filament panel, for one — and requests that match no route at all are all covered. Responses your application never sees, such as static files served by the web server, are not.
 
 The middleware adds no header when the token is missing or blank, or when the base URL is blank, unparseable, not an absolute `http` or `https` URL, or carries credentials. That keeps a misconfiguration from breaking responses, and makes local and development environments quiet by default. The reporting URL defaults to `https://in.forduty.app` and can be overridden with `FORDUTY_BASE_URL`.
 
-The middleware overwrites any existing `Reporting-Endpoints` header. To disable it for specific routes, use `withoutMiddleware()`:
+The middleware overwrites any existing `Reporting-Endpoints` header. To disable it for specific routes, use `withoutMiddleware()` — global middleware is normally beyond its reach, but this one checks the matched route before it writes the header:
 
 ```php
 use Concept7\LaravelForduty\Http\Middleware\AddReportingEndpointsHeader;
@@ -86,7 +86,7 @@ Network Error Logging asks the browser to report requests that failed before you
 FORDUTY_NEL_ENABLED=true
 ```
 
-Responses in the `web` group then carry a policy alongside the endpoints header:
+Responses then carry a policy alongside the endpoints header:
 
 ```
 NEL: {"report_to":"default","max_age":2592000,"include_subdomains":false,"success_fraction":0,"failure_fraction":1}
@@ -113,22 +113,6 @@ use Concept7\LaravelForduty\Http\Middleware\AddNetworkErrorLoggingHeader;
 
 Route::get('/embed', EmbedController::class)
     ->withoutMiddleware(AddNetworkErrorLoggingHeader::class);
-```
-
-### Other Middleware Groups
-
-To attach the middleware to other groups such as `api`, append it in `bootstrap/app.php`:
-
-```php
-use Concept7\LaravelForduty\Http\Middleware\AddNetworkErrorLoggingHeader;
-use Concept7\LaravelForduty\Http\Middleware\AddReportingEndpointsHeader;
-
-->withMiddleware(function (Middleware $middleware): void {
-    $middleware->api(append: [
-        AddReportingEndpointsHeader::class,
-        AddNetworkErrorLoggingHeader::class,
-    ]);
-})
 ```
 
 ## Changelog

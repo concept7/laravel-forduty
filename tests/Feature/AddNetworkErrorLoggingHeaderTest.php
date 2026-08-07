@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Concept7\LaravelForduty\Http\Middleware\AddNetworkErrorLoggingHeader;
-use Illuminate\Routing\Router;
+use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
 use Illuminate\Support\Facades\Route;
 
 beforeEach(function (): void {
@@ -13,8 +13,8 @@ beforeEach(function (): void {
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 });
 
-it('attaches the middleware to the web group', function (): void {
-    expect(app(Router::class)->getMiddlewareGroups()['web'])
+it('attaches the middleware to the global stack', function (): void {
+    expect(app(HttpKernelContract::class)->getGlobalMiddleware())
         ->toContain(AddNetworkErrorLoggingHeader::class);
 });
 
@@ -126,14 +126,14 @@ it('adds no header when a sampling fraction is out of range', function (string $
     ['failure_fraction', null],
 ]);
 
-it('adds no header to routes outside the web group', function (): void {
+it('adds the policy to routes outside the web group', function (): void {
     config()->set('laravel-forduty.nel.enabled', true);
 
     Route::middleware('api')->get('/forduty-api', fn (): string => 'ok');
 
     $this->get('/forduty-api')
         ->assertOk()
-        ->assertHeaderMissing('NEL');
+        ->assertHeader('NEL', '{"report_to":"default","max_age":2592000,"include_subdomains":false,"success_fraction":0,"failure_fraction":1}');
 });
 
 it('can be excluded without losing the reporting endpoints header', function (): void {
