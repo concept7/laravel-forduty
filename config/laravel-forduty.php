@@ -10,8 +10,6 @@ return [
 
     'nel' => [
 
-        'enabled' => (bool) env('FORDUTY_NEL_ENABLED', false),
-
         'max_age' => env('FORDUTY_NEL_MAX_AGE', 2592000),
 
         'include_subdomains' => (bool) env('FORDUTY_NEL_INCLUDE_SUBDOMAINS', false),

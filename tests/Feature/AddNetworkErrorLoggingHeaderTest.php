@@ -3,37 +3,28 @@
 declare(strict_types=1);
 
 use Concept7\LaravelForduty\Http\Middleware\AddNetworkErrorLoggingHeader;
-use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
+use Concept7\LaravelForduty\Http\Middleware\AddReportingEndpointsHeader;
 use Illuminate\Support\Facades\Route;
 
 beforeEach(function (): void {
+    $this->appendGlobalMiddleware(
+        AddReportingEndpointsHeader::class,
+        AddNetworkErrorLoggingHeader::class,
+    );
+
     Route::middleware('web')->get('/forduty-test', fn (): string => 'ok');
 
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
 });
 
-it('attaches the middleware to the global stack', function (): void {
-    expect(app(HttpKernelContract::class)->getGlobalMiddleware())
-        ->toContain(AddNetworkErrorLoggingHeader::class);
-});
-
-it('adds no header by default', function (): void {
-    $this->get('/forduty-test')
-        ->assertOk()
-        ->assertHeaderMissing('NEL');
-});
-
-it('adds the policy when enabled', function (): void {
-    config()->set('laravel-forduty.nel.enabled', true);
-
+it('adds the default policy once the middleware is registered', function (): void {
     $this->get('/forduty-test')
         ->assertOk()
         ->assertHeader('NEL', '{"report_to":"default","max_age":2592000,"include_subdomains":false,"success_fraction":0,"failure_fraction":1}');
 });
 
 it('reflects include_subdomains in the policy', function (): void {
-    config()->set('laravel-forduty.nel.enabled', true);
     config()->set('laravel-forduty.nel.include_subdomains', true);
 
     $this->get('/forduty-test')
@@ -42,7 +33,6 @@ it('reflects include_subdomains in the policy', function (): void {
 });
 
 it('reflects the sampling fractions in the policy', function (): void {
-    config()->set('laravel-forduty.nel.enabled', true);
     config()->set('laravel-forduty.nel.success_fraction', 0.01);
     config()->set('laravel-forduty.nel.failure_fraction', 0.5);
 
@@ -52,7 +42,6 @@ it('reflects the sampling fractions in the policy', function (): void {
 });
 
 it('accepts a zero max age, which clears a policy the browser holds', function (): void {
-    config()->set('laravel-forduty.nel.enabled', true);
     config()->set('laravel-forduty.nel.max_age', 0);
 
     $this->get('/forduty-test')
@@ -61,7 +50,6 @@ it('accepts a zero max age, which clears a policy the browser holds', function (
 });
 
 it('accepts numeric strings, as the environment supplies them', function (): void {
-    config()->set('laravel-forduty.nel.enabled', true);
     config()->set('laravel-forduty.nel.max_age', '600');
     config()->set('laravel-forduty.nel.failure_fraction', '0.25');
 
@@ -71,7 +59,6 @@ it('accepts numeric strings, as the environment supplies them', function (): voi
 });
 
 it('adds no header when the token is missing', function (): void {
-    config()->set('laravel-forduty.nel.enabled', true);
     config()->set('laravel-forduty.token', null);
 
     $this->get('/forduty-test')
@@ -80,7 +67,6 @@ it('adds no header when the token is missing', function (): void {
 });
 
 it('adds no header when the base url cannot be used', function (string $baseUrl): void {
-    config()->set('laravel-forduty.nel.enabled', true);
     config()->set('laravel-forduty.base_url', $baseUrl);
 
     $this->get('/forduty-test')
@@ -94,7 +80,6 @@ it('adds no header when the base url cannot be used', function (string $baseUrl)
 ]);
 
 it('adds no header when the max age is not a whole non-negative number', function (mixed $maxAge): void {
-    config()->set('laravel-forduty.nel.enabled', true);
     config()->set('laravel-forduty.nel.max_age', $maxAge);
 
     $this->get('/forduty-test')
@@ -109,7 +94,6 @@ it('adds no header when the max age is not a whole non-negative number', functio
 ]);
 
 it('adds no header when a sampling fraction is out of range', function (string $key, mixed $fraction): void {
-    config()->set('laravel-forduty.nel.enabled', true);
     config()->set('laravel-forduty.nel.'.$key, $fraction);
 
     $this->get('/forduty-test')
@@ -127,24 +111,9 @@ it('adds no header when a sampling fraction is out of range', function (string $
 ]);
 
 it('adds the policy to routes outside the web group', function (): void {
-    config()->set('laravel-forduty.nel.enabled', true);
-
     Route::middleware('api')->get('/forduty-api', fn (): string => 'ok');
 
     $this->get('/forduty-api')
         ->assertOk()
         ->assertHeader('NEL', '{"report_to":"default","max_age":2592000,"include_subdomains":false,"success_fraction":0,"failure_fraction":1}');
-});
-
-it('can be excluded without losing the reporting endpoints header', function (): void {
-    config()->set('laravel-forduty.nel.enabled', true);
-
-    Route::middleware('web')
-        ->get('/forduty-excluded', fn (): string => 'ok')
-        ->withoutMiddleware(AddNetworkErrorLoggingHeader::class);
-
-    $this->get('/forduty-excluded')
-        ->assertOk()
-        ->assertHeaderMissing('NEL')
-        ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
 });

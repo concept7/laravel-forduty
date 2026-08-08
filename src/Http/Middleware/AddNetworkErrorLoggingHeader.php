@@ -5,15 +5,12 @@ declare(strict_types=1);
 namespace Concept7\LaravelForduty\Http\Middleware;
 
 use Closure;
-use Concept7\LaravelForduty\Concerns\RespectsRouteExclusions;
 use Concept7\LaravelForduty\LaravelForduty;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class AddNetworkErrorLoggingHeader
 {
-    use RespectsRouteExclusions;
-
     /**
      * The reporting group this policy delivers to. Matches the group name
      * AddReportingEndpointsHeader declares, since a NEL policy can only name
@@ -29,10 +26,6 @@ class AddNetworkErrorLoggingHeader
     public function handle(Request $request, Closure $next): Response
     {
         $response = $next($request);
-
-        if ($this->isExcludedFromRoute($request)) {
-            return $response;
-        }
 
         if (blank($this->forduty->endpoint())) {
             return $response;
@@ -50,17 +43,13 @@ class AddNetworkErrorLoggingHeader
     }
 
     /**
-     * Build the policy document, or null when network error logging is off or
-     * configured with a value a browser would not accept. A bad value yields
-     * no header rather than a corrected one, because silently substituting a
-     * default would change how much a site reports without saying so.
+     * Build the policy document, or null when it is configured with a value a
+     * browser would not accept. A bad value yields no header rather than a
+     * corrected one, because silently substituting a default would change how
+     * much a site reports without saying so.
      */
     protected function policy(): ?string
     {
-        if (! config('laravel-forduty.nel.enabled')) {
-            return null;
-        }
-
         $maxAge = $this->maxAge();
         $successFraction = $this->fraction('success_fraction');
         $failureFraction = $this->fraction('failure_fraction');

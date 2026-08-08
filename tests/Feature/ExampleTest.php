@@ -17,10 +17,9 @@ it('merges the package config', function (): void {
         ->and(config('laravel-forduty.base_url'))->toBe('https://in.forduty.app');
 });
 
-it('leaves network error logging off by default', function (): void {
+it('defaults the network error logging policy', function (): void {
     expect(config('laravel-forduty.nel'))
         ->toMatchArray([
-            'enabled' => false,
             'max_age' => 2592000,
             'include_subdomains' => false,
             'success_fraction' => 0.0,
