@@ -3,19 +3,19 @@
 declare(strict_types=1);
 
 use Concept7\LaravelForduty\Http\Middleware\AddNetworkErrorLoggingHeader;
-use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
+use Concept7\LaravelForduty\Http\Middleware\AddReportingEndpointsHeader;
 use Illuminate\Support\Facades\Route;
 
 beforeEach(function (): void {
+    $this->appendGlobalMiddleware(
+        AddReportingEndpointsHeader::class,
+        AddNetworkErrorLoggingHeader::class,
+    );
+
     Route::middleware('web')->get('/forduty-test', fn (): string => 'ok');
 
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
-});
-
-it('attaches the middleware to the global stack', function (): void {
-    expect(app(HttpKernelContract::class)->getGlobalMiddleware())
-        ->toContain(AddNetworkErrorLoggingHeader::class);
 });
 
 it('adds no header by default', function (): void {
@@ -134,17 +134,4 @@ it('adds the policy to routes outside the web group', function (): void {
     $this->get('/forduty-api')
         ->assertOk()
         ->assertHeader('NEL', '{"report_to":"default","max_age":2592000,"include_subdomains":false,"success_fraction":0,"failure_fraction":1}');
-});
-
-it('can be excluded without losing the reporting endpoints header', function (): void {
-    config()->set('laravel-forduty.nel.enabled', true);
-
-    Route::middleware('web')
-        ->get('/forduty-excluded', fn (): string => 'ok')
-        ->withoutMiddleware(AddNetworkErrorLoggingHeader::class);
-
-    $this->get('/forduty-excluded')
-        ->assertOk()
-        ->assertHeaderMissing('NEL')
-        ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
 });

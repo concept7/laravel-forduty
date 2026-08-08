@@ -2,6 +2,24 @@
 
 ## [Unreleased](https://github.com/concept7/laravel-forduty/compare/v0.4.0...HEAD)
 
+### Breaking Changes
+
+- The package no longer registers its middleware. Applications append `AddReportingEndpointsHeader` — and `AddNetworkErrorLoggingHeader`, if network error logging is on — to their own middleware stack in `bootstrap/app.php`:
+
+  ```php
+  use Concept7\LaravelForduty\Http\Middleware\AddReportingEndpointsHeader;
+
+  ->withMiddleware(function (Middleware $middleware): void {
+      $middleware->append(AddReportingEndpointsHeader::class);
+  })
+  ```
+
+  Upgrading without that leaves responses with no headers at all, and nothing arriving at for.duty. Which responses carry a header is the application's call, and a package that pushes middleware onto the global stack from a service provider takes that call away — invisibly, from a file nobody looks at when a header shows up where it was not wanted. The README recommends the global stack, and explains what a narrower registration gives up, but the registration itself is now yours to write.
+
+### Removed
+
+- The `RespectsRouteExclusions` trait, which made `withoutMiddleware()` work on middleware the router never gathered. It existed to paper over the global registration the package did for you; with the registration in the application's hands, plain Laravel rules apply again — `withoutMiddleware()` reaches group and route middleware, and not the global stack. An application that wants per-route exclusions registers on a group instead of globally.
+
 ## [v0.4.0](https://github.com/concept7/laravel-forduty/compare/v0.3.0...v0.4.0) - 2026-08-07
 
 ### Fixed

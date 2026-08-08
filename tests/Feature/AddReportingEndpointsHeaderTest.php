@@ -3,11 +3,7 @@
 declare(strict_types=1);
 
 use Concept7\LaravelForduty\Http\Middleware\AddReportingEndpointsHeader;
-use Concept7\LaravelForduty\LaravelFordutyServiceProvider;
-use Illuminate\Contracts\Container\BindingResolutionException;
-use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
 use Illuminate\Cookie\Middleware\EncryptCookies;
-use Illuminate\Foundation\Application;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Middleware\SubstituteBindings;
@@ -15,29 +11,9 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
 
 beforeEach(function (): void {
+    $this->appendGlobalMiddleware(AddReportingEndpointsHeader::class);
+
     Route::middleware('web')->get('/forduty-test', fn (): string => 'ok');
-});
-
-it('attaches the middleware to the global stack', function (): void {
-    expect(app(HttpKernelContract::class)->getGlobalMiddleware())
-        ->toContain(AddReportingEndpointsHeader::class);
-});
-
-it('attaches the middleware once, however often the provider boots', function (): void {
-    (new LaravelFordutyServiceProvider(app()))->boot();
-
-    $registrations = collect(app(HttpKernelContract::class)->getGlobalMiddleware())
-        ->filter(fn (string $middleware): bool => $middleware === AddReportingEndpointsHeader::class);
-
-    expect($registrations)->toHaveCount(1);
-});
-
-it('boots without an http kernel bound', function (): void {
-    $application = new Application(base_path());
-
-    expect(function () use ($application): void {
-        (new LaravelFordutyServiceProvider($application))->boot();
-    })->not->toThrow(BindingResolutionException::class);
 });
 
 it('adds the reporting endpoints header when token and base url are set', function (): void {
@@ -255,19 +231,6 @@ it('adds the header to routes in no group at all', function (): void {
     $this->get('/forduty-bare')
         ->assertOk()
         ->assertHeader('Reporting-Endpoints', 'default="https://in.forduty.app/abc123"');
-});
-
-it('can be excluded from a single route', function (): void {
-    config()->set('laravel-forduty.token', 'abc123');
-    config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
-
-    Route::middleware('web')
-        ->get('/forduty-excluded', fn (): string => 'ok')
-        ->withoutMiddleware(AddReportingEndpointsHeader::class);
-
-    $this->get('/forduty-excluded')
-        ->assertOk()
-        ->assertHeaderMissing('Reporting-Endpoints');
 });
 
 it('adds the header to redirect responses', function (): void {
