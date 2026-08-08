@@ -113,13 +113,7 @@ CSP reporting is the one this package cannot turn on for you, because the direct
 
 ### Network Error Logging
 
-Network Error Logging asks the browser to report requests that failed before your application ever saw them — DNS failures, TCP resets, TLS errors, aborted connections. It is off by default. Enable it with:
-
-```dotenv
-FORDUTY_NEL_ENABLED=true
-```
-
-Then register `AddNetworkErrorLoggingHeader` alongside the other middleware:
+Network Error Logging asks the browser to report requests that failed before your application ever saw them — DNS failures, TCP resets, TLS errors, aborted connections. It is off until you register `AddNetworkErrorLoggingHeader` alongside the other middleware:
 
 ```php
 use Concept7\LaravelForduty\Http\Middleware\AddNetworkErrorLoggingHeader;
@@ -133,11 +127,13 @@ use Concept7\LaravelForduty\Http\Middleware\AddReportingEndpointsHeader;
 })
 ```
 
-Responses then carry a policy alongside the endpoints header:
+Every response that middleware sees then carries a policy alongside the endpoints header:
 
 ```
 NEL: {"report_to":"default","max_age":2592000,"include_subdomains":false,"success_fraction":0,"failure_fraction":1}
 ```
+
+Registering the middleware is the whole opt-in — there is no separate flag to set. To turn network error logging off again, take it back out of `bootstrap/app.php`. Browsers hold a policy for as long as its `max_age` says, though, so a site that has been sending one wants a deploy with `FORDUTY_NEL_MAX_AGE=0` to clear it before the middleware goes.
 
 Four optional variables tune it:
 

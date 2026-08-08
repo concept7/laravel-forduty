@@ -43,17 +43,13 @@ class AddNetworkErrorLoggingHeader
     }
 
     /**
-     * Build the policy document, or null when network error logging is off or
-     * configured with a value a browser would not accept. A bad value yields
-     * no header rather than a corrected one, because silently substituting a
-     * default would change how much a site reports without saying so.
+     * Build the policy document, or null when it is configured with a value a
+     * browser would not accept. A bad value yields no header rather than a
+     * corrected one, because silently substituting a default would change how
+     * much a site reports without saying so.
      */
     protected function policy(): ?string
     {
-        if (! config('laravel-forduty.nel.enabled')) {
-            return null;
-        }
-
         $maxAge = $this->maxAge();
         $successFraction = $this->fraction('success_fraction');
         $failureFraction = $this->fraction('failure_fraction');

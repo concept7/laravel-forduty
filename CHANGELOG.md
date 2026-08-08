@@ -18,6 +18,7 @@
 
 ### Removed
 
+- `FORDUTY_NEL_ENABLED`, and the `nel.enabled` config key behind it. Registering `AddNetworkErrorLoggingHeader` is now the only opt-in network error logging has. The flag made sense when the package registered the middleware for you and an env var was the sole way to say no; with registration in the application's hands, two switches for one behavior meant a header could go missing for either of two reasons. An application that sets `FORDUTY_NEL_ENABLED` on upgrade sees no error — the variable is simply ignored, and the policy is sent as soon as the middleware is registered. To stop sending one, remove the middleware, after a deploy with `FORDUTY_NEL_MAX_AGE=0` to clear the policy browsers already hold.
 - The `RespectsRouteExclusions` trait, which made `withoutMiddleware()` work on middleware the router never gathered. It existed to paper over the global registration the package did for you; with the registration in the application's hands, plain Laravel rules apply again — `withoutMiddleware()` reaches group and route middleware, and not the global stack. An application that wants per-route exclusions registers on a group instead of globally.
 
 ## [v0.4.0](https://github.com/concept7/laravel-forduty/compare/v0.3.0...v0.4.0) - 2026-08-07

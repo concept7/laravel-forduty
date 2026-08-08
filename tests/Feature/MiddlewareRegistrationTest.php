@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Route;
 beforeEach(function (): void {
     config()->set('laravel-forduty.token', 'abc123');
     config()->set('laravel-forduty.base_url', 'https://in.forduty.app');
-    config()->set('laravel-forduty.nel.enabled', true);
 
     Route::middleware('web')->get('/forduty-test', fn (): string => 'ok');
 });
